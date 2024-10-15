@@ -10,12 +10,11 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = GordonViewModel()
     @State private var isShowingImagePicker = false
-    @State private var isShowingCamera = false
     @State private var imageSource: UIImagePickerController.SourceType = .photoLibrary
     
     var body: some View {
         NavigationView {
-            VStack {
+            VStack(spacing: 0) {
                 chatList
                 
                 if viewModel.selectedImage != nil {
@@ -25,6 +24,8 @@ struct ContentView: View {
                 inputArea
             }
             .navigationTitle("Gordon")
+            .navigationBarTitleDisplayMode(.inline)
+            .background(Color(.systemGroupedBackground))
             .sheet(isPresented: $isShowingImagePicker) {
                 ImagePicker(image: $viewModel.selectedImage, sourceType: imageSource)
             }
@@ -33,7 +34,7 @@ struct ContentView: View {
     
     private var chatList: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 10) {
+            LazyVStack(spacing: 12) {
                 ForEach(viewModel.chatHistory) { message in
                     ChatBubble(message: message)
                 }
@@ -46,44 +47,40 @@ struct ContentView: View {
         Image(uiImage: viewModel.selectedImage!)
             .resizable()
             .scaledToFit()
-            .frame(height: 200)
+            .frame(height: 150)
             .cornerRadius(10)
-            .padding()
+            .padding(.horizontal)
+            .padding(.top, 8)
     }
     
     private var inputArea: some View {
-        VStack {
-            HStack {
-                TextField("Ask Gordon something...", text: $viewModel.userInput)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                Button(action: viewModel.sendMessage) {
-                    Image(systemName: "paperplane.fill")
-                }
-                .disabled(viewModel.userInput.isEmpty || viewModel.isLoading)
-            }
-            .padding(.horizontal)
-            
-            HStack {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 12) {
                 Button(action: {
                     imageSource = .photoLibrary
                     isShowingImagePicker = true
                 }) {
                     Image(systemName: "photo")
-                    Text("Gallery")
+                        .font(.system(size: 24))
+                        .foregroundColor(.blue)
                 }
                 
-                Spacer()
+                TextField("Message", text: $viewModel.userInput)
+                    .padding(8)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(20)
                 
-                Button(action: {
-                    imageSource = .camera
-                    isShowingImagePicker = true
-                }) {
-                    Image(systemName: "camera")
-                    Text("Camera")
+                Button(action: viewModel.sendMessage) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(.blue)
                 }
+                .disabled(viewModel.userInput.isEmpty && viewModel.selectedImage == nil)
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(Color(.secondarySystemBackground))
         }
     }
 }
@@ -95,22 +92,23 @@ struct ChatBubble: View {
         HStack {
             if message.role == .user { Spacer() }
             
-            VStack(alignment: message.role == .user ? .trailing : .leading) {
-                Text(message.content.textContent ?? "")
-                    .padding(10)
-                    .background(message.role == .user ? Color.blue : Color.gray)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-                
+            VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
                 if case .image(let data) = message.content,
                    let uiImage = UIImage(data: data) {
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFit()
                         .frame(maxHeight: 200)
-                        .cornerRadius(10)
+                        .cornerRadius(16)
                 }
+                
+                Text(message.content.textContent ?? "")
+                    .padding(12)
+                    .background(message.role == .user ? Color.blue : Color(.systemGray5))
+                    .foregroundColor(message.role == .user ? .white : .primary)
+                    .cornerRadius(18)
             }
+            .padding(.horizontal, 4)
             
             if message.role == .model { Spacer() }
         }

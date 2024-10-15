@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Combine
 import SwiftUI
 
 class GordonViewModel: ObservableObject {
@@ -22,10 +21,7 @@ class GordonViewModel: ObservableObject {
     }
     
     func sendMessage() {
-        guard !userInput.isEmpty else { return }
-        
-        let userMessage = Message(role: .user, content: .text(userInput))
-        chatHistory.append(userMessage)
+        guard !userInput.isEmpty || selectedImage != nil else { return }
         
         isLoading = true
         
@@ -37,6 +33,9 @@ class GordonViewModel: ObservableObject {
     }
     
     private func sendTextMessage() {
+        let userMessage = Message(role: .user, content: .text(userInput))
+        chatHistory.append(userMessage)
+        
         apiHelper.getTextResponse(for: chatHistory) { [weak self] result in
             DispatchQueue.main.async {
                 self?.handleAPIResponse(result)
@@ -45,12 +44,10 @@ class GordonViewModel: ObservableObject {
     }
     
     private func sendImageMessage(image: UIImage) {
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            handleAPIResponse(.failure(NSError(domain: "Image conversion failed", code: 0, userInfo: nil)))
-            return
-        }
+        let userMessage = Message(role: .user, content: .image(image.jpegData(compressionQuality: 0.8)!))
+        chatHistory.append(userMessage)
         
-        apiHelper.getImageResponse(for: userInput, imageData: imageData) { [weak self] result in
+        apiHelper.getImageResponse(for: userInput, image: image) { [weak self] result in
             DispatchQueue.main.async {
                 self?.handleAPIResponse(result)
             }
